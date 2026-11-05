@@ -28,6 +28,12 @@ npm run test:watch   # 引擎测试监听
 
 ESLint 配置在 `eslint.config.js`（TypeScript、React Hooks、React Refresh，并用 `eslint-config-prettier` 关闭格式类规则）；Prettier 使用默认风格。提交前运行 `npm run check`。`package.json` 中的 `overrides.minimatch` 用于修复 ESLint 依赖链上的已知审计问题，升级 ESLint 后可复查是否仍需要。
 
+## 部署
+
+线上地址：**https://leaves32.github.io/personality-town/**
+
+推送到 `main` 后，`.github/workflows/deploy.yml` 自动执行 `npm run check`、生产构建并发布到 GitHub Pages；检查失败则不发布。也可在仓库 Actions 页手动运行。项目站点挂在 `/personality-town/` 子路径下，工作流把它作为 `BASE_PATH` 传给 Vite 的 `base`；本地构建不设置时为根路径。页面路由使用 URL hash，静态托管无需额外重写规则。
+
 首次运行浏览器测试需要下载测试浏览器：
 
 ```bash
