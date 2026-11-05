@@ -62,7 +62,7 @@ test("首页 → 介绍 → 自适应旅程 → 含扩展报告，刷新恢复�
   });
   const saved = await page.evaluate((k) => localStorage.getItem(k), key);
   await page.reload();
-  await page.getByRole("button", { name: "继续探索", exact: true }).click();
+  await expect(page).toHaveURL(/#\/report$/);
   await expect(page.locator(".type-code")).toHaveText("INFP");
   await page.getByRole("button", { name: "重新探索", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
@@ -128,9 +128,54 @@ test("报告中改动触发回答会移除过期分支并重新生成结果", as
     stored.answers.some((a: { questionId: string }) => a.questionId === "f01"),
   ).toBe(false);
   await page.reload();
-  await page.getByRole("button", { name: "继续探索", exact: true }).click();
+  await expect(
+    page.locator(".question-context, .report-heading"),
+  ).toBeVisible();
   if (await page.locator(".question-context").count()) await finish(page);
   await expect(page.locator(".report-heading")).toBeVisible();
+});
+test("答题中刷新停在当前题，后退回首页，地址无效或无存档时安全回落", async ({
+  page,
+}) => {
+  await start(page);
+  await expect(page).toHaveURL(/#\/quiz$/);
+  await answer(page, 1);
+  await expect(page.locator(".question-context")).toContainText(
+    "第一次接触陶艺",
+  );
+  await page.reload();
+  await expect(page).toHaveURL(/#\/quiz$/);
+  await expect(page.locator(".question-context")).toContainText(
+    "第一次接触陶艺",
+  );
+  // 开始旅程时介绍页被替换，后退直接回到首页，不会落到可重新开局的介绍页。
+  await page.goBack();
+  await expect(
+    page.getByRole("button", { name: "继续探索", exact: true }),
+  ).toBeVisible();
+  await page.goForward();
+  await expect(page.locator(".question-context")).toContainText(
+    "第一次接触陶艺",
+  );
+  // 已有回答时手输介绍页地址，不会绕过“重新探索”确认。
+  await page.goto("/#/intro");
+  await expect(
+    page.getByRole("button", { name: "继续探索", exact: true }),
+  ).toBeVisible();
+  // 未完成时访问报告页，回到当前题。
+  await page.goto("/#/report");
+  await expect(page).toHaveURL(/#\/quiz$/);
+  await expect(page.locator(".question-context")).toContainText(
+    "第一次接触陶艺",
+  );
+  // 没有存档时访问答题页，回到首页。
+  await page.evaluate((k) => localStorage.removeItem(k), key);
+  await page.goto("/#/quiz");
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "开始探索", exact: true }),
+  ).toBeVisible();
+  await expect(page).not.toHaveURL(/#\/quiz/);
 });
 test("损坏存档提供备份与安全重开，不自动覆盖原始数据", async ({ page }) => {
   await page.goto("/");

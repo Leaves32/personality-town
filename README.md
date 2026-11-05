@@ -40,6 +40,7 @@ Playwright 自动启动 `127.0.0.1:5173` 上的开发服务；本地已有该服
 ## 第一版已完成
 
 - 首页 → 介绍 → 逐题情境 → 动态追问 → 完整报告；继续已有旅程、暂停、刷新恢复、上一题改答、报告内回看和修改。
+- 页面记录在 URL hash（`#/intro`、`#/quiz`、`#/report`，首页无 hash）：刷新停留在当前页，浏览器前进/后退可用。地址只表示想去的页面，实际页面仍按存档校正：无存档回首页；已完成的答题页显示报告；未完成的报告页回到当前题；已有回答时须经“重新探索”确认才能进入介绍页。开始旅程会替换介绍页的历史记录，后退直接回首页。
 - 24 道基础情境（每维 6 道）、24 道有实际路径可达的追问/跨场景验证、8 道独立 A／T 扩展。均为原创中文。核心通常 32–40 题，开启扩展另加 8 题。
 - 临时拒绝邀约不直接判断内向；动机追问区分精力恢复、疲劳或限制、临时改计划、活动兴趣。其他生活场景继续验证。
 - 16 种类型均可达，并有完整的原创角色介绍、日常提示、相处提示及小实验。角色不是职业建议或能力等级。
@@ -56,7 +57,7 @@ Playwright 自动启动 `127.0.0.1:5173` 上的开发服务；本地已有该服
 
 ```text
 src/
-  App.tsx                  页面状态、存档协调、确认弹窗
+  App.tsx                  hash 页面路由与校正、存档协调、确认弹窗
   components/
     Home.tsx Intro.tsx      首页与说明
     Quiz.tsx               单题作答、回看、打字效果与键盘交互
@@ -154,6 +155,6 @@ tests/e2e/journey.spec.ts   Playwright 桌面/手机完整流程
 
 ## 已执行的检查
 
-详见 [VALIDATION.md](./VALIDATION.md)。当前引擎测试 39 项、桌面/手机 Playwright 共 16 项全部通过；生产构建通过，`npm audit` 为 0 项漏洞。浏览器测试覆盖 Chromium 与模拟手机视口，没有验证真实移动设备、Safari 或 Firefox，也未执行心理测量验证或完整无障碍审计。
+详见 [VALIDATION.md](./VALIDATION.md)。当前引擎测试 39 项、桌面/手机 Playwright 共 18 项全部通过；生产构建通过，`npm audit` 为 0 项漏洞。浏览器测试覆盖 Chromium 与模拟手机视口，没有验证真实移动设备、Safari 或 Firefox，也未执行心理测量验证或完整无障碍审计。
 
 开发依据参考 [Vite 官方指南](https://vite.dev/guide/)、[Vitest 官方指南](https://vitest.dev/guide/) 与 [Playwright Web server 文档](https://playwright.dev/docs/test-webserver)。

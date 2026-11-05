@@ -13,6 +13,25 @@ import { ResidentGallery } from "./components/ResidentGallery";
 import { Icon } from "./components/Icons";
 const bankErrors = validateBank(QUESTIONS);
 type Page = "home" | "intro" | "quiz" | "report";
+// 用 hash 记录当前页面：刷新停留在原处，浏览器前进/后退可用，静态托管无需服务端路由。
+const ROUTES: Record<Page, string> = {
+  home: "",
+  intro: "#/intro",
+  quiz: "#/quiz",
+  report: "#/report",
+};
+function pageFromHash(hash: string): Page {
+  const match = (Object.keys(ROUTES) as Page[]).find(
+    (p) => ROUTES[p] && ROUTES[p] === hash,
+  );
+  return match ?? "home";
+}
+function writeUrl(page: Page, replace: boolean) {
+  const target = ROUTES[page] || location.pathname + location.search;
+  if ((ROUTES[page] || "") === location.hash) return;
+  if (replace) history.replaceState(null, "", target);
+  else history.pushState(null, "", target);
+}
 function readPreference(key: string, fallback: boolean) {
   try {
     const raw = localStorage.getItem(key);
@@ -38,8 +57,43 @@ export default function App() {
   const [storageIssue, setStorageIssue] = useState(
     initial.status === "invalid" ? initial.reason : "",
   );
-  const [page, setPage] = useState<Page>("home");
+  const [route, setRoute] = useState<Page>(() => pageFromHash(location.hash));
+  // 已有回答时，只有经过“重新探索”确认才能进入介绍页，避免后退或手输地址后误开新旅程。
+  const [introUnlocked, setIntroUnlocked] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
+  function setPage(p: Page, { replace = false } = {}) {
+    writeUrl(p, replace);
+    setIntroUnlocked(p === "intro");
+    setRoute(p);
+  }
+  useEffect(() => {
+    const sync = () => {
+      const p = pageFromHash(location.hash);
+      setRoute(p);
+      setIntroUnlocked(false);
+      if (p !== "quiz") setEditIndex(null);
+    };
+    window.addEventListener("popstate", sync);
+    window.addEventListener("hashchange", sync);
+    return () => {
+      window.removeEventListener("popstate", sync);
+      window.removeEventListener("hashchange", sync);
+    };
+  }, []);
+  // 地址只表达“想去哪页”，实际页面还要符合存档状态：无存档不能进答题/报告，
+  // 已完成时答题页落到报告，未完成时报告页回到当前题。
+  let page = route;
+  if (page === "intro" && session?.answers.length && !introUnlocked)
+    page = "home";
+  if (page === "quiz" || page === "report") {
+    if (!session) page = "home";
+    else {
+      const pending = nextQuestion(session) !== null;
+      if (page === "quiz" && editIndex === null && !pending) page = "report";
+      if (page === "report" && pending) page = "quiz";
+    }
+  }
+  useEffect(() => writeUrl(page, true), [page]);
   const [modal, setModal] = useState<
     "restart" | "residents" | "settings" | null
   >(null);
@@ -97,7 +151,8 @@ export default function App() {
     setStorageIssue("");
     persist(s);
     setEditIndex(null);
-    setPage("quiz");
+    // 替换介绍页的历史记录：开始后按“后退”回到首页，而不是回到可重新开局的介绍页。
+    setPage("quiz", { replace: true });
   }
   function answer(a: Answer) {
     if (!session) return;

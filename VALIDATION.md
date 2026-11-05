@@ -52,3 +52,10 @@ Playwright 每种视口覆盖：
 - 重新执行生产构建、39 项引擎测试和 16 项 Playwright 流程，全部通过。
 - 另用 Playwright 在 1440px、390px、320px 下检查图鉴弹窗无横向溢出，并逐个选择全部 16 位居民，确认放大展示对应更新；已查看桌面、手机图鉴及放大角色截图。
 - 截图保存在 `test-results/residents-*.png`、`test-results/resident-selected-*.png` 与 `test-results/resident-guide-desktop.png`。
+
+## 页面路由与工程基础（2026-11-04）
+
+- 接入 ESLint（typescript-eslint、react-hooks、react-refresh）与 Prettier；`npm run check` 依次执行 TypeScript、ESLint、Prettier 检查和 Vitest。修复 lint 报出的打字效果在 effect 中同步 setState 的问题。
+- 页面改用 URL hash 记录，刷新停在当前页，浏览器前进/后退可用；地址按存档状态校正，避免绕过“重新探索”确认或在无存档时进入答题/报告。
+- 新增 Playwright 场景：答题中刷新、后退回首页再前进、已有回答时手输介绍页地址、未完成时访问报告页、无存档访问答题页。原有两处“刷新后点继续探索”的断言改为刷新后直接停留在原页。
+- `npm run check`（39 项 Vitest）、`npm run build`、`npm audit`（0 漏洞）通过；Playwright 9 个场景 × 桌面/手机，18/18 通过。另在应用内浏览器手动确认答题中刷新停留在第 2 题、后退回首页。
